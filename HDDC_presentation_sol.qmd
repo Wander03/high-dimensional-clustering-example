@@ -1,0 +1,315 @@
+---
+title: "High-Dimensional Data Clustering with HDDC"
+author: "Andrew Kerr"
+format: 
+  html:
+    code-fold: true
+    toc: true
+    toc-title: "Outline"
+    toc-depth: 3
+    code-line-numbers: true
+    code-tools: true
+    self-contained: true
+    theme:
+      light: flatly
+      dark: darkly
+    default: dark
+embed-resources: true
+---
+
+```{r}
+#| message: false
+#| warning: false
+#| include: false
+library(HDclassif)
+library(mclust)
+library(tidyverse)
+library(palmerpenguins)
+library(gridExtra)
+library(patchwork)
+library(gganimate)
+```
+
+# Introduction
+
+Clustering high-dimensional data presents unique challenges due to the "curse of dimensionality." Traditional clustering methods, like K-Means, can fail because high-dimensional data often lie in lower-dimensional subspaces. This presentation introduces the *High-Dimensional Data Clustering (HDDC)* method, which improves clustering by integrating Gaussian Mixture Models (GMMs) with subspace modeling.
+
+## Motivation
+
+-   In many applications (e.g., image analysis, genomics), data points exist in hidden low-dimensional subspaces.
+
+-   Standard clustering methods fail to capture this structure because they give equal weight to all dimensions, however not all dimensions have the same importance.
+
+-   HDDC models each cluster within its intrinsic subspace, improving efficiency and accuracy.
+
+    ![](images/clipboard-1550307275.png)
+
+# Background Concepts
+
+## Principal Component Analysis (PCA)
+
+-   PCA reduces dimensionality by finding directions (principal components) that maximize variance.
+-   HDDC extends this idea by estimating class-specific subspaces, allowing different clusters to exist in different lower-dimensional subspaces.
+
+## Gaussian Mixture Models (GMMs)
+
+-   GMMs assume data come from a mixture of Gaussian distributions.
+-   Each cluster is modeled as a Gaussian distribution with parameters: mean ($\mu$), covariance ($\Sigma$), and mixing proportion ($\pi$).
+
+## Expectation-Maximization (EM) Algorithm
+
+-   An iterative method to estimate GMM parameters.
+
+-   Alternates between:
+
+    1.  **Expectation (E-step):** Compute probabilities of each point belonging to a cluster.
+    2.  **Maximization (M-step):** Update parameters to maximize likelihood.
+
+    ```{r}
+    #| echo: false
+    #| fig-cap: "EM Algorithm: Iterative parameter estimation"
+    knitr::include_graphics("https://upload.wikimedia.org/wikipedia/commons/6/69/EM_Clustering_of_Old_Faithful_data.gif")
+    ```
+
+# The HDDC Model
+
+HDDC enhances GMMs by modeling each cluster in its own subspace:
+
+1.  Each cluster exists in a lower-dimensional space (estimated using PCA-like methods).
+2.  Covariance matrices are regularized to prevent overfitting.
+3.  The Bayesian Information Criterion (BIC) is used to select the best model.
+
+### HDDC Steps
+
+1.  **Estimate subspace for each cluster** using eigenvalue decomposition.
+
+2.  **Determine intrinsic dimension** of each cluster using the Scree test, which looks for an "elbow" in the eigenvalue spectrum to determine where the dimensionality significantly decreases.
+
+3.  **Fit Gaussian distributions** in the estimated subspaces.
+
+4.  **Classify points** using posterior probabilities.
+
+    ```{r}
+    #| include: false
+    #| eval: false
+
+    demo(hddc)
+    ```
+
+# Model Variants in HDDC
+
+HDDC allows for different assumptions about the structure of covariance matrices, leading to three main model variants:
+
+### Free Orientation Model
+
+-   Each cluster has its own unique orientation, meaning that the covariance matrices have different eigenvector orientations across clusters.
+-   This model provides the most flexibility but requires estimating more parameters, which may lead to overfitting in small datasets.
+
+### Common Orientation Model
+
+-   All clusters share the same orientation, meaning their covariance matrices have the same eigenvectors but different eigenvalues.
+-   This reduces the number of parameters to estimate while still allowing for different variances within each cluster.
+-   It assumes that clusters lie in aligned subspaces rather than completely independent ones.
+
+### Common Covariance Matrix Model
+
+-   All clusters share the same covariance matrix, meaning both the eigenvectors and eigenvalues are common across clusters.
+
+-   This model is the most constrained and assumes that clusters have similar spread and shape.
+
+-   It is computationally efficient and avoids overfitting but may not work well when clusters have significantly different structures.
+
+    ```{r}
+    #| echo: false
+    #| fig-cap: "HDDC Model Variants"
+    #| out-width: "90%"
+    # Generate covariance matrices
+    set.seed(123)
+    par(mfrow = c(1,3))
+
+    # Free orientation
+    plot_ellipse <- function(cov_matrix, title) {
+      theta <- seq(0, 2*pi, length.out = 100)
+      circle <- cbind(cos(theta), sin(theta))
+      ellipse <- circle %*% chol(cov_matrix)
+      plot(ellipse, type = "l", main = title, xlab = "", ylab = "", asp = 1)
+    }
+
+    # Free orientation
+    cov_free <- matrix(c(1, 0.8, 0.8, 1), 2, 2)
+    plot_ellipse(cov_free, "Free Orientation")
+
+    # Common orientation
+    cov_common <- matrix(c(1, 0, 0, 0.5), 2, 2)
+    plot_ellipse(cov_common, "Common Orientation")
+
+    # Common covariance
+    cov_shared <- matrix(c(1, 0, 0, 1), 2, 2)
+    plot_ellipse(cov_shared, "Common Covariance")
+    ```
+
+# Example: HDDC v. K-Means
+
+```{r}
+#| echo: false
+#| fig-height: 10
+#| fig-width: 12
+
+set.seed(42)
+# Load Penguins dataset
+data("penguins")
+penguins <- na.omit(penguins)
+
+# Select numeric features for clustering
+features <- penguins[, c("bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g")]
+true_clusters <- as.numeric(as.factor(penguins$species))
+
+# Apply HDDC
+hddc_result <- HDclassif::hddc(features, K = 3, model = "ALL")
+
+# Apply k-means
+kmeans_result <- kmeans(features, centers = 3)
+
+# Visualize the results using PCA
+pca <- prcomp(features, scale. = TRUE)
+df <- data.frame(
+  PC1 = pca$x[, 1], 
+  PC2 = pca$x[, 2], 
+  True_Cluster = as.factor(true_clusters),
+  HDDC_Cluster = as.factor(hddc_result$class),
+  KMeans_Cluster = as.factor(kmeans_result$cluster)
+)
+
+# Plot true clusters
+p1 <- ggplot(df, aes(PC1, PC2, color = True_Cluster)) +
+  geom_point(size = 2) +
+  ggtitle("True Clusters") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("2" = "firebrick", "1" = "cornflowerblue", "3" = "green4")) 
+
+# Plot HDDC clusters
+p2 <- ggplot(df, aes(PC1, PC2, color = HDDC_Cluster)) +
+  geom_point(size = 2) +
+  ggtitle("HDDC Clustering") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("1" = "firebrick", "2" = "cornflowerblue", "3" = "green4")) 
+
+# Plot k-means clusters
+p3 <- ggplot(df, aes(PC1, PC2, color = KMeans_Cluster)) +
+  geom_point(size = 2) +
+  ggtitle("K-means Clustering") +
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("3" = "firebrick", "2" = "cornflowerblue", "1" = "green4")) 
+
+p1 / p2 / p3 + 
+  plot_annotation(title = "Clustering Comparison for Penguins",
+                  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+```{r}
+#| echo: false
+cat("HDDC ARI:", adjustedRandIndex(true_clusters, hddc_result$class), 
+    "\nK-Means ARI:", adjustedRandIndex(true_clusters, kmeans_result$cluster))
+```
+
+```{r}
+#| echo: false
+#| fig-height: 8
+#| fig-width: 10
+set.seed(42)
+n <- 300
+p <- 50
+k <- 3
+
+# Cluster 1: Wider spread in non-informative dimensions
+cluster1 <- cbind(
+  matrix(rnorm(n/k * 5, mean = 3, sd = 1.5), ncol = 5),  # Informative subspace
+  matrix(rnorm(n/k * (p - 5), mean = 0, sd = 3), ncol = p - 5)  # Stronger noise
+)
+
+# Cluster 2: Shifted mean in overlapping dimensions, higher variance
+cluster2 <- cbind(
+  matrix(rnorm(n/k * 2, mean = 0, sd = 3), ncol = 2),  # Stronger noise
+  matrix(rnorm(n/k * 5, mean = -2, sd = 2), ncol = 5),  # Informative subspace
+  matrix(rnorm(n/k * (p - 7), mean = 0, sd = 3), ncol = p - 7)  # Stronger noise
+)
+
+# Cluster 3: Overlapping subspaces but with different scaling
+cluster3 <- cbind(
+  matrix(rnorm(n/k * 5, mean = 1, sd = 2.5), ncol = 5),  # Stronger spread
+  matrix(rnorm(n/k * 5, mean = 1, sd = 1), ncol = 5),  # Informative subspace
+  matrix(rnorm(n/k * (p - 10), mean = 0, sd = 3), ncol = p - 10)  # Stronger noise
+)
+
+# Combine clusters
+data <- rbind(cluster1, cluster2, cluster3)
+true_clusters <- rep(1:3, each = n/k)
+
+# Apply clustering methods
+hddc_result <- hddc(data, K = 3, model = "ALL")
+kmeans_result <- kmeans(data, centers = 3)
+
+# PCA for visualization
+pca <- prcomp(data)
+df <- data.frame(
+  PC1 = pca$x[, 1],
+  PC2 = pca$x[, 2],
+  True = factor(true_clusters),
+  HDDC = factor(hddc_result$class),
+  KMeans = factor(kmeans_result$cluster)
+)
+
+# Create plots
+p1 <- ggplot(df, aes(PC1, PC2, color = True)) + 
+  geom_point(size = 2) + 
+  ggtitle("True Clusters") + 
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("1" = "firebrick", "2" = "cornflowerblue", "3" = "green4")) 
+
+p2 <- ggplot(df, aes(PC1, PC2, color = HDDC)) + 
+  geom_point(size = 2) + 
+  ggtitle("HDDC Clusters") + 
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("2" = "firebrick", "3" = "cornflowerblue", "1" = "green4")) 
+
+p3 <- ggplot(df, aes(PC1, PC2, color = KMeans)) + 
+  geom_point(size = 2) + 
+  ggtitle("K-Means Clusters") + 
+  theme_bw() +
+  theme(legend.position = "none") +
+  scale_color_manual(values = c("1" = "firebrick", "2" = "cornflowerblue", "3" = "green4")) 
+
+# Arrange plots
+p1 / p2 / p3 + 
+  plot_annotation(title = "Clustering Comparison in 50D Space",
+                  theme = theme(plot.title = element_text(hjust = 0.5)))
+```
+
+```{r}
+#| echo: false
+cat("HDDC ARI:", adjustedRandIndex(true_clusters, hddc_result$class), 
+    "\nK-Means ARI:", adjustedRandIndex(true_clusters, kmeans_result$cluster))
+```
+
+# Discussion Questions and Responses
+
+1.  **What are potential limitations of HDDC?**
+    -   HDDC requires estimating more parameters than simpler models, which can lead to overfitting in small datasets.
+    
+2. **How HDDC performs when the number of dimensions is comparable to the number of observations (**$n \approx p$**)?**
+    -   Subspace estimation requires sufficient observations to identify meaningful patterns
+    
+3. **How does HDDC scale to very large datasets (e.g., millions of observations)?**
+    -   HDDC struggles with very large datasets due to its computational complexity.
+    -   Possible Solution: Sampling
+
+4. **Can we check whether HDDC is appropriate for a given dataset?**
+    -   Yes!
+    -   PCA: If the data has a clear lower-dimensional structure (e.g., after applying PCA, most of the variance is captured by the first few components), it suggests that the data may be well-suited for HDDC’s subspace modeling.
+    -   Normality Tests: Shapiro-Wilk and Multivariate Normality Tests
+    -   Clustering Validation: Look for well-separated, tight clusters
