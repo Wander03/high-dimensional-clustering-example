@@ -313,3 +313,14 @@ cat("HDDC ARI:", adjustedRandIndex(true_clusters, hddc_result$class),
     -   PCA: If the data has a clear lower-dimensional structure (e.g., after applying PCA, most of the variance is captured by the first few components), it suggests that the data may be well-suited for HDDC’s subspace modeling.
     -   Normality Tests: Shapiro-Wilk and Multivariate Normality Tests
     -   Clustering Validation: Look for well-separated, tight clusters
+    
+5. **he paper presents experiments on both artificial and real datasets. What are some advantages of testing clustering algorithms on artificial datasets before applying them to real-world data?**
+    -   Control the data generation process: easier to evaluate the performance of the algorithm.
+    -   Simulate specific scenarios
+    -   Compare with ground truth
+    -   Debug and refine the algorithm
+    
+6. **What real-world applications could HDDC be applied to (outside of those in the paper)?**
+    -   Bioinformatics: Clustering gene expression data
+    -   Text mining: Clustering documents based on word frequencies or topics
+    -   Social network analysis: Clustering users based on high-dimensional data like interaction patterns, interests, or behaviors to identify communities or target marketing efforts.

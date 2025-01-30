@@ -296,7 +296,7 @@ cat("HDDC ARI:", adjustedRandIndex(true_clusters, hddc_result$class),
     "\nK-Means ARI:", adjustedRandIndex(true_clusters, kmeans_result$cluster))
 ```
 
-# Discussion Questions and Responses
+# Discussion Questions
 
 1.  **What are potential limitations of HDDC?**
     
@@ -305,3 +305,7 @@ cat("HDDC ARI:", adjustedRandIndex(true_clusters, hddc_result$class),
 3. **How does HDDC scale to very large datasets (e.g., millions of observations)?**
 
 4. **Can we check whether HDDC is appropriate for a given dataset?**
+
+5. **The paper presents experiments on both artificial and real datasets. What are some advantages of testing clustering algorithms on artificial datasets before applying them to real-world data?**
+
+6. **What real-world applications could HDDC be applied to (outside of those in the paper)?**

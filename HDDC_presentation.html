@@ -3058,7 +3058,7 @@ vertical-align: -.125em;
   <li><a href="#common-covariance-matrix-model" id="toc-common-covariance-matrix-model" class="nav-link" data-scroll-target="#common-covariance-matrix-model">Common Covariance Matrix Model</a></li>
   </ul></li>
   <li><a href="#example-hddc-v.-k-means" id="toc-example-hddc-v.-k-means" class="nav-link" data-scroll-target="#example-hddc-v.-k-means">Example: HDDC v. K-Means</a></li>
-  <li><a href="#discussion-questions-and-responses" id="toc-discussion-questions-and-responses" class="nav-link" data-scroll-target="#discussion-questions-and-responses">Discussion Questions and Responses</a></li>
+  <li><a href="#discussion-questions" id="toc-discussion-questions" class="nav-link" data-scroll-target="#discussion-questions">Discussion Questions</a></li>
   </ul>
 </nav>
 </div>
@@ -3218,13 +3218,15 @@ K-Means ARI: 0.2829519</code></pre>
 </div>
 </div>
 </section>
-<section id="discussion-questions-and-responses" class="level1">
-<h1>Discussion Questions and Responses</h1>
+<section id="discussion-questions" class="level1">
+<h1>Discussion Questions</h1>
 <ol type="1">
 <li><p><strong>What are potential limitations of HDDC?</strong></p></li>
 <li><p><strong>How HDDC performs when the number of dimensions is comparable to the number of observations (</strong><span class="math inline">\(n \approx p\)</span><strong>)?</strong></p></li>
 <li><p><strong>How does HDDC scale to very large datasets (e.g., millions of observations)?</strong></p></li>
 <li><p><strong>Can we check whether HDDC is appropriate for a given dataset?</strong></p></li>
+<li><p><strong>The paper presents experiments on both artificial and real datasets. What are some advantages of testing clustering algorithms on artificial datasets before applying them to real-world data?</strong></p></li>
+<li><p><strong>What real-world applications could HDDC be applied to (outside of those in the paper)?</strong></p></li>
 </ol>
 <!-- -->
 
@@ -3929,7 +3931,7 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-306"><a href="#cb3-306"></a>    <span class="st">&quot;</span><span class="sc">\n</span><span class="st">K-Means ARI:&quot;</span>, <span class="fu">adjustedRandIndex</span>(true_clusters, kmeans_result<span class="sc">$</span>cluster))</span>
 <span id="cb3-307"><a href="#cb3-307"></a><span class="in">```</span></span>
 <span id="cb3-308"><a href="#cb3-308"></a></span>
-<span id="cb3-309"><a href="#cb3-309"></a><span class="fu"># Discussion Questions and Responses</span></span>
+<span id="cb3-309"><a href="#cb3-309"></a><span class="fu"># Discussion Questions</span></span>
 <span id="cb3-310"><a href="#cb3-310"></a></span>
 <span id="cb3-311"><a href="#cb3-311"></a><span class="ss">1.  </span>**What are potential limitations of HDDC?**</span>
 <span id="cb3-312"><a href="#cb3-312"></a>    </span>
@@ -3938,6 +3940,10 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb3-315"><a href="#cb3-315"></a><span class="ss">3. </span>**How does HDDC scale to very large datasets (e.g., millions of observations)?**</span>
 <span id="cb3-316"><a href="#cb3-316"></a></span>
 <span id="cb3-317"><a href="#cb3-317"></a><span class="ss">4. </span>**Can we check whether HDDC is appropriate for a given dataset?**</span>
+<span id="cb3-318"><a href="#cb3-318"></a></span>
+<span id="cb3-319"><a href="#cb3-319"></a><span class="ss">5. </span>**The paper presents experiments on both artificial and real datasets. What are some advantages of testing clustering algorithms on artificial datasets before applying them to real-world data?**</span>
+<span id="cb3-320"><a href="#cb3-320"></a></span>
+<span id="cb3-321"><a href="#cb3-321"></a><span class="ss">6. </span>**What real-world applications could HDDC be applied to (outside of those in the paper)?**</span>
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
